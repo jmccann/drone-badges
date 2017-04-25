@@ -22,6 +22,12 @@ if [ -z $PLUGIN_STATUS ]; then
   exit 1
 fi
 
+echo "Posting data to $PLUGIN_URL"
+
+if [ "$PLUGIN_DEBUG" == "true" ] ; then
+  echo "json: $(json)"
+fi
+
 curl -f -k -H "Content-Type: application/json" \
      -X PUT -d "$(json)" \
      $PLUGIN_URL
