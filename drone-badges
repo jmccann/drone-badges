@@ -1,0 +1,32 @@
+#!/bin/sh
+
+if [ -f .badges ] ; then
+  source .badges
+fi
+
+json() {
+  if [ -z $PLUGIN_COLOR ]; then
+    printf "%q" "$(jo subject=$PLUGIN_SUBJECT status=$PLUGIN_STATUS)"
+  else
+    printf "%q" "$(jo subject=$PLUGIN_SUBJECT status=$PLUGIN_STATUS color=$PLUGIN_COLOR)"
+  fi
+}
+
+if [ -z $PLUGIN_URL ]; then
+  echo "You must provide a url"
+  exit 1
+fi
+
+if [ -z $PLUGIN_SUBJECT ]; then
+  echo "You must provide a subject"
+  exit 1
+fi
+
+if [ -z $PLUGIN_STATUS ]; then
+  echo "You must provide a status"
+  exit 1
+fi
+
+curl -f -k -H "Content-Type: application/json" \
+     -X PUT -d "$(json)" \
+     $PLUGIN_URL
