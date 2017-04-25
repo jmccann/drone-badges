@@ -17,11 +17,6 @@ if [ -z $PLUGIN_URL ]; then
   exit 1
 fi
 
-if [ -z $PLUGIN_SUBJECT ]; then
-  echo "You must provide a subject"
-  exit 1
-fi
-
 if [ -z $PLUGIN_STATUS ]; then
   echo "You must provide a status"
   exit 1
