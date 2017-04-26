@@ -1,33 +1,49 @@
-#!/bin/bash
+#!/usr/bin/env ruby
 
-if [ -f .badges ] ; then
-  source .badges
-fi
+require 'json'
+require 'net/https'
+require 'uri'
 
-json() {
-  if [ -z $PLUGIN_COLOR ]; then
-    printf "%q" "$(jo subject=$PLUGIN_SUBJECT status=$PLUGIN_STATUS)"
-  else
-    printf "%q" "$(jo subject=$PLUGIN_SUBJECT status=$PLUGIN_STATUS color=$PLUGIN_COLOR)"
-  fi
-}
+def source_env_from(file)
+  File.readlines(file).each do |line|
+    values = line.chomp.split("=")
+    ENV[values[0]] = values[1]
+  end
+end
 
-if [ -z $PLUGIN_URL ]; then
-  echo "You must provide a url"
-  exit 1
-fi
+def validate
+  raise "You must provide a url" if ENV['PLUGIN_URL'].nil?
+  raise "You must provide a status" if ENV['PLUGIN_STATUS'].nil?
+end
 
-if [ -z $PLUGIN_STATUS ]; then
-  echo "You must provide a status"
-  exit 1
-fi
+def json
+  j = {'status' => ENV['PLUGIN_STATUS']}
+  j['subject'] = ENV['PLUGIN_SUBJECT'] unless ENV['PLUGIN_SUBJECT'].nil?
+  j['color'] = ENV['PLUGIN_COLOR'] unless ENV['PLUGIN_COLOR'].nil?
+  j.to_json
+end
 
-echo "Posting data to $PLUGIN_URL"
+source_env_from('.badges') if File.exist?('.badges')
+validate
 
-if [ "$PLUGIN_DEBUG" == "true" ] ; then
-  echo "json: $(json)"
-fi
+if ENV['PLUGIN_DEBUG'] == 'true'
+  puts "json: #{json}"
+end
 
-curl -f -k -H "Content-Type: application/json" \
-     -X PUT -d "$(json)" \
-     $PLUGIN_URL
+header = {'Content-Type': 'application/json'}
+uri = URI.parse(ENV['PLUGIN_URL'])
+
+# Create the HTTP objects
+http = Net::HTTP.new(uri.host, uri.port)
+http.use_ssl = true
+http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+request = Net::HTTP::Put.new(uri.request_uri, header)
+request.body = json
+
+puts "Posting data to #{ENV['PLUGIN_URL']}"
+begin
+  response = http.request(request)
+rescue Exception => e
+  puts e.message
+  puts e.backtrace.inspect
+end
